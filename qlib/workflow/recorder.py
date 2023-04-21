@@ -324,7 +324,7 @@ class MLflowRecorder(Recorder):
                 raise RuntimeError("This recorder is not saved in the local file system.")
 
         else:
-            raise Exception(
+            raise ValueError(
                 "Please make sure the recorder has been created and started properly before getting artifact uri."
             )
 
@@ -371,7 +371,7 @@ class MLflowRecorder(Recorder):
                 out = subprocess.check_output(cmd, shell=True)
                 self.client.log_text(self.id, out.decode(), fname)  # this behaves same as above
             except subprocess.CalledProcessError:
-                logger.info(f"Fail to log the uncommitted code of $CWD when run `{cmd}`")
+                logger.info(f"Fail to log the uncommitted code of $CWD({os.getcwd()}) when run {cmd}.")
 
     def end_run(self, status: str = Recorder.STATUS_S):
         assert status in [
@@ -464,7 +464,7 @@ class MLflowRecorder(Recorder):
         if self.artifact_uri is not None:
             return self.artifact_uri
         else:
-            raise Exception(
+            raise ValueError(
                 "Please make sure the recorder has been created and started properly before getting artifact uri."
             )
 
