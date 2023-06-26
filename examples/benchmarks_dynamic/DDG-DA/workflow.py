@@ -34,14 +34,14 @@ class DDGDA:
 
     def __init__(
         self,
-        sim_task_model: Literal["linear", "gbdt"] = "linear",
+        sim_task_model: Literal["linear", "gbdt"] = "gbdt",
         forecast_model: Literal["linear", "gbdt"] = "linear",
         h_path: Optional[str] = None,
         test_end: Optional[str] = None,
         train_start: Optional[str] = None,
         meta_1st_train_end: Optional[str] = None,
         task_ext_conf: Optional[dict] = None,
-        alpha: float = 0.0,
+        alpha: float = 0.01,
         proxy_hd: str = "handler_proxy.pkl",
     ):
         """
@@ -116,7 +116,9 @@ class DDGDA:
 
         feature_selected = feature_df.loc[:, col_selected.index]
 
-        feature_selected = feature_selected.groupby("datetime").apply(lambda df: (df - df.mean()).div(df.std()))
+        feature_selected = feature_selected.groupby("datetime", group_keys=False).apply(
+            lambda df: (df - df.mean()).div(df.std())
+        )
         feature_selected = feature_selected.fillna(0.0)
 
         df_all = {
@@ -168,7 +170,8 @@ class DDGDA:
         # - Only the dataset part is important, in current version of meta model will integrate the
         rb = RollingBenchmark(model_type=self.sim_task_model, **self.rb_kwargs)
         sim_task = rb.basic_task()
-        train_start = self.rb_kwargs.get("train_start", "2008-01-01")
+        # the train_start for training meta model does not necessarily align with final rolling
+        train_start = "2008-01-01" if self.rb_kwargs.get("train_start") is None else self.rb_kwargs.get("train_start")
         train_end = "2010-12-31" if self.meta_1st_train_end is None else self.meta_1st_train_end
         test_start = (pd.Timestamp(train_end) + pd.Timedelta(days=1)).strftime("%Y-%m-%d")
         proxy_forecast_model_task = {
@@ -212,7 +215,7 @@ class DDGDA:
         with R.start(experiment_name=self.meta_exp_name):
             R.log_params(**kwargs)
             mm = MetaModelDS(
-                step=self.step, hist_step_n=kwargs["hist_step_n"], lr=0.001, max_epoch=100, seed=43, alpha=self.alpha
+                step=self.step, hist_step_n=kwargs["hist_step_n"], lr=0.001, max_epoch=30, seed=43, alpha=self.alpha
             )
             mm.fit(md)
             R.save_objects(model=mm)

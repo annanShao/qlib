@@ -44,7 +44,7 @@ is_deprecated_lexsorted_pandas = version.parse(pd.__version__) > version.parse("
 #################### Server ####################
 def get_redis_connection():
     """get redis connection instance."""
-    return redis.StrictRedis(host=C.redis_host, port=C.redis_port, db=C.redis_task_db)
+    return redis.StrictRedis(host=C.redis_host, port=C.redis_port, db=C.redis_task_db, password=C.redis_password)
 
 
 #################### Data ####################
@@ -428,7 +428,7 @@ def init_instance_by_config(
             pr = urlparse(config)
             if pr.scheme == "file":
                 pr_path = os.path.join(pr.netloc, pr.path) if bool(pr.path) else pr.netloc
-                with open(pr_path, "rb") as f:
+                with open(os.path.normpath(pr_path), "rb") as f:
                     return pickle.load(f)
         else:
             with config.open("rb") as f:

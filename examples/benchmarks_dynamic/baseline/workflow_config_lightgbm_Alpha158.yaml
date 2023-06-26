@@ -9,29 +9,13 @@ data_handler_config: &data_handler_config
     fit_start_time: 2008-01-01
     fit_end_time: 2014-12-31
     instruments: *market
-    infer_processors:
-        - class: RobustZScoreNorm
-          kwargs:
-              fields_group: feature
-              clip_outlier: true
-        - class: Fillna
-          kwargs:
-              fields_group: feature
-    learn_processors:
-        - class: DropnaLabel
-        - class: CSRankNorm
-          kwargs:
-              fields_group: label
-    label: ["Ref($close, -2) / Ref($close, -1) - 1"]
-
 port_analysis_config: &port_analysis_config
     strategy:
         class: TopkDropoutStrategy
         module_path: qlib.contrib.strategy
         kwargs:
-            signal:
-                - <MODEL> 
-                - <DATASET>
+            model: <MODEL> 
+            dataset: <DATASET>
             topk: 50
             n_drop: 5
     backtest:
@@ -47,23 +31,24 @@ port_analysis_config: &port_analysis_config
             min_cost: 5
 task:
     model:
-        class: DNNModelPytorch
-        module_path: qlib.contrib.model.pytorch_nn
+        class: LGBModel
+        module_path: qlib.contrib.model.gbdt
         kwargs:
             loss: mse
-            lr: 0.002
-            optimizer: adam
-            max_steps: 8000
-            batch_size: 4096
-            GPU: 0
-            pt_model_kwargs:
-              input_dim: 360
+            colsample_bytree: 0.8879
+            learning_rate: 0.2
+            subsample: 0.8789
+            lambda_l1: 205.6999
+            lambda_l2: 580.9768
+            max_depth: 8
+            num_leaves: 210
+            num_threads: 20
     dataset:
         class: DatasetH
         module_path: qlib.data.dataset
         kwargs:
             handler:
-                class: Alpha360
+                class: Alpha158
                 module_path: qlib.contrib.data.handler
                 kwargs: *data_handler_config
             segments:
